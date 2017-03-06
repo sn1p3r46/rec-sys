@@ -31,11 +31,15 @@ def main():
 
     ws = websocket.WebSocket()
     ws.connect(end_point)
-   
+    print ("CONNECTED")
     i = 0 
     while (i<3):
         handle_message(ws,ws.recv())
         i+=1
+
+    ws.close()
+    print("WebSocket closed\nexit\n")
+
 
 if __name__ == "__main__":
     main()
