@@ -3,7 +3,7 @@
 import asyncio
 import websockets
 
-# end_point='ws://service.recommendersystem.com/recsys2-course/engine'
+end_point='ws://service.recommendersystem.com/recsys2-course/engine'
 
 voc = {
 
@@ -15,10 +15,11 @@ voc = {
 
 async def myclient():
     try:
-        async with websockets.connect('ws://localhost:8765') as websocket:
+        async with websockets.connect(end_point) as websocket:
             while (True):
 
                 try:
+#                    await websocket.send("TEST46")
                     question = await websocket.recv()
                     print ("Received: " + question)
                     print ("Answering with: " + voc[question])
