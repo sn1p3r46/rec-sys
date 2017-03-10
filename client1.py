@@ -15,11 +15,11 @@ voc = {
 
 def handle_message(ws,message):
     
-    val = voc[message]
     
     print ("Received message: " + message)
 
-    if val != None :
+    if message in voc:
+        val = voc[message]
         res = message + ":" + val
         print ("Sending: "+res)
         ws.send(res)
