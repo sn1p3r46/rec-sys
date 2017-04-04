@@ -1,2 +1,6 @@
 *.pyc
 *.swp
+*.pkl
+__pycache__/
+*$py.class
+*.dc

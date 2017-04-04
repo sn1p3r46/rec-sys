@@ -9,7 +9,6 @@ AUTH_DIC = {
     'Author email' : 'andreagalloni[92][at]gmail[dot]com',
     'Author id' : 'JGNBMW',
     'Token' : '4lvos7hd1a',
-
 }
 
 
