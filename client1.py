@@ -9,71 +9,71 @@ import pickle as pkl
 import igraph as ig
 
 
-selected_knowbase = None
-know_base_dic = {}
+selected_kb = None
+kb_dic = {}
 
 
 def add_node_type(node_type):
 
-    know_base_dic[selected_knowbase]["node_types"].add(node_type)
-    print (selected_knowbase)
+    kb_dic[selected_kb]["node_types"].add(node_type)
+    print (selected_kb)
 
-    return 'Node type added:' + node_type
+    return wsh.N_T_A + node_type
 
 
 def add_relation_type(relation_type):
 
-    know_base_dic[selected_knowbase]["relation_types"].add(relation_type)
-    print (selected_knowbase)
+    kb_dic[selected_kb]["relation_types"].add(relation_type)
+    print (selected_kb)
 
-    return 'Relation type added:' + relation_type
+    return wsh.R_T_A +  relation_type
 
 
 def add_node(node_str):
 
     node = json.loads(node_str)
 
-    if node["type"] in know_base_dic[selected_knowbase]["node_types"]:
+    if node["type"] in kb_dic[selected_kb]["node_types"]:
 
-        know_base_dic[selected_knowbase]["graph"].add_vertex(**node)
-        return "Node added"
+        kb_dic[selected_kb]["graph"].add_vertex(**node)
+        return wsh.N_ADDED 
 
-    return "Unknown node type"
+    return wsh.UNK_N_T 
 
 
 def add_relation(relation_str):
 
-    g = know_base_dic[selected_knowbase]["graph"]
+    g = kb_dic[selected_kb]["graph"]
     relation = json.loads(relation_str)
 
-    if relation["type"] in know_base_dic[selected_knowbase]["relation_types"]:
+    if relation["type"] in kb_dic[selected_kb]["relation_types"]:
 
         v0 = g.vs.find(**{"id":relation.pop("fromId")})
         v1 = g.vs.find(**{"id":relation.pop("toId")})
         g.add_edge(v0,v1,**relation)
 
-        return "Relation added"
+        return wsh.R_ADDED
 
-    return "Unknown relation type"
+    return wsh.UNK_R_T
 
 
 def get_node_types():
-    return "Node types:" + wsh.format_set_to_arr_str(know_base_dic[selected_knowbase]["node_types"])
+    return wsh.N_TYPES + wsh.fmt_arr_str(kb_dic[selected_kb]["node_types"])
 
 
 def get_node_count():
-    return "Node count:" + str(len(know_base_dic[selected_knowbase]["graph"].vs))
+    return wsh.N_COUNT + str(len(kb_dic[selected_kb]["graph"].vs))
 
 
 def get_relation_types():
-    return "Relation types:" + wsh.format_set_to_arr_str(know_base_dic[selected_knowbase]["relation_types"])
+    return wsh.R_TYPES + wsh.fmt_arr_str(kb_dic[selected_kb]["relation_types"])
 
 
 def get_relation_count():
-    return "Relation count:" + str(len(know_base_dic[selected_knowbase]["graph"].es))
+    return wsh.R_COUNT + str(len(kb_dic[selected_kb]["graph"].es))
 
 
-add_commands = {
+add_cmds = {
 
     'Add node type' : add_node_type,
     'Add relation type' : add_relation_type,
@@ -83,7 +83,7 @@ add_commands = {
 }
 
 
-get_commands = {
+get_cmds = {
 
     'Get node types' : get_node_types,
     'Get relation types' : get_relation_types,
@@ -93,84 +93,84 @@ get_commands = {
 }
 
 
-def handle_knowbase(message):
+def handle_knowbase(msg):
 
-    global selected_knowbase
+    global selected_kb
 
-    if selected_knowbase and not know_base_dic[selected_knowbase]["persisted"]:
+    if selected_kb and not kb_dic[selected_kb]["persisted"]:
 
-        db_file = open (selected_knowbase + "_graph.pkl", "wb")
-        pkl.dump(know_base_dic[selected_knowbase]["graph"], db_file)
+        db_file = open (selected_kb + "_graph.pkl", "wb")
+        pkl.dump(kb_dic[selected_kb]["graph"], db_file)
         db_file.close()
-        know_base_dic[selected_knowbase]["persisted"] = True
+        kb_dic[selected_kb]["persisted"] = True
 
-    selected_knowbase = message.split(":")[1].strip()
+    selected_kb = msg.split(":")[1].strip()
 
-    if selected_knowbase == '':
-        raise ValueError(wsh.INVALID_KBASE)
+    if selected_kb == '':
+        raise ValueError(wsh.INV_KB)
 
-    if selected_knowbase in know_base_dic:
-        return "Knowledge base has been selected"
+    if selected_kb in kb_dic:
+        return wsh.KB_SELECTED
 
     else:
 
         try:
 
-            db_file = open(selected_knowbase + "_graph.pkl", "rb")
+            db_file = open(selected_kb + "_graph.pkl", "rb")
             graph = pkl.load(file=db_file)
             db_file.close()
-            know_base_dic[selected_knowbase] = {
+            kb_dic[selected_kb] = {
                     "node_types" : set(graph.vs["type"]),
                     "relation_types" : set(graph.es["type"]),
                     "graph" : graph,
                     "persisted" : True
                 }
 
-            return "Knowledge base has been selected"
+            return wsh.KB_SELECTED 
 
         except FileNotFoundError:
 
-            know_base_dic[selected_knowbase] = {
+            kb_dic[selected_kb] = {
                     "node_types" : set(),
                     "relation_types" : set(),
                     "graph" : ig.Graph(),
                     "persisted" : False
                 }
 
-            return "Knowledge base has been created"
+            return wsh.KB_CREATED
 
 
-def handle_message(ws,message):
+def handle_message(ws,msg):
 
     global my_log_file
-    my_log_file.write(message + "\n")
+    my_log_file.write(msg + "\n")
 
-    print ("Received message: " + message)
+    print ("Received message: " + msg)
 
-    if message in wsh.AUTH_DIC:
-        res = message + ":" + wsh.AUTH_DIC[message]
+    if msg in wsh.AUTH_DIC:
+        res = msg + ":" + wsh.AUTH_DIC[msg]
 
-    elif message.startswith("Select knowledge base:"):
-        res = handle_knowbase(message)
+    elif msg.startswith(wsh.SELECT_KB):
+        res = handle_knowbase(msg)
 
-    elif message.split(':',1)[0] in add_commands:
-        splitted = message.split(':',1)
-        res = add_commands[splitted[0]] (splitted[1])
+    elif msg.split(':',1)[0] in add_cmds:
+        splitted = msg.split(':',1)
+        res = add_cmds[splitted[0]] (splitted[1])
 
-    elif message in get_commands:
-        res = get_commands[message]()
+    elif msg in get_cmds:
+        res = get_cmds[msg]()
 
     else:
 
-        print ("Unexpected Message: " + message)
-        print (know_base_dic)
+        print ("Unexpected Message: " + msg)
+        print (kb_dic)
 
         my_log_file.close()
 
-        # if selected_knowbase != None:
+        # if selected_kb != None:
 
-           # gfile = open(selected_knowbase+"_graph.pkl", 'wb')
-           # pkl.dump(know_base_dic[selected_knowbase]["graph"],gfile)
+           # gfile = open(selected_kb+"_graph.pkl", 'wb')
+           # pkl.dump(kb_dic[selected_kb]["graph"],gfile)
            # gfile.close()
 
         print ("file closed")
