@@ -2,10 +2,11 @@
 
 # https://pypi.python.org/pypi/websocket-client
 import websocket
-import wsHelper as wsh
 import json
-import igraph as ig
+
+import wsHelper as wsh
 import pickle as pkl
+import igraph as ig
 
 
 selected_knowbase = None
@@ -14,7 +15,7 @@ know_base_dic = {}
 
 def add_node_type(node_type):
 
-    know_base_dic[selected_knowbase]["node_types"].add(node_type)  
+    know_base_dic[selected_knowbase]["node_types"].add(node_type)
     print (selected_knowbase)
 
     return 'Node type added:' + node_type
@@ -22,7 +23,7 @@ def add_node_type(node_type):
 
 def add_relation_type(relation_type):
 
-    know_base_dic[selected_knowbase]["relation_types"].add(relation_type)  
+    know_base_dic[selected_knowbase]["relation_types"].add(relation_type)
     print (selected_knowbase)
 
     return 'Relation type added:' + relation_type
@@ -34,7 +35,7 @@ def add_node(node_str):
 
     if node["type"] in know_base_dic[selected_knowbase]["node_types"]:
 
-        know_base_dic[selected_knowbase]["graph"].add_vertex(**node)    
+        know_base_dic[selected_knowbase]["graph"].add_vertex(**node)
         return "Node added"
 
     return "Unknown node type"
@@ -96,7 +97,7 @@ def handle_knowbase(message):
 
     global selected_knowbase
 
-    if selected_knowbase and not know_base_dic[selected_knowbase]["persisted"]:       
+    if selected_knowbase and not know_base_dic[selected_knowbase]["persisted"]:
 
         db_file = open (selected_knowbase + "_graph.pkl", "wb")
         pkl.dump(know_base_dic[selected_knowbase]["graph"], db_file)
@@ -116,34 +117,34 @@ def handle_knowbase(message):
         try:
 
             db_file = open(selected_knowbase + "_graph.pkl", "rb")
-            pkl.load(file=db_file)
+            graph = pkl.load(file=db_file)
             db_file.close()
             know_base_dic[selected_knowbase] = {
-                    "node_types" : set(db_file.vs["type"]),
-                    "relation_types" : set(db_file.es["type"]),
-                    "graph" : db_file,
-                    "persisted" : True 
+                    "node_types" : set(graph.vs["type"]),
+                    "relation_types" : set(graph.es["type"]),
+                    "graph" : graph,
+                    "persisted" : True
                 }
 
             return "Knowledge base has been selected"
 
         except FileNotFoundError:
 
-            know_base_dic[selected_knowbase] = { 
-                    "node_types" : set(), 
+            know_base_dic[selected_knowbase] = {
+                    "node_types" : set(),
                     "relation_types" : set(),
                     "graph" : ig.Graph(),
                     "persisted" : False
                 }
 
-            return "Knowledge base has been created" 
+            return "Knowledge base has been created"
 
 
 def handle_message(ws,message):
-    
+
     global my_log_file
     my_log_file.write(message + "\n")
-     
+
     print ("Received message: " + message)
 
     if message in wsh.AUTH_DIC:
@@ -151,7 +152,7 @@ def handle_message(ws,message):
 
     elif message.startswith("Select knowledge base:"):
         res = handle_knowbase(message)
-        
+
     elif message.split(':',1)[0] in add_commands:
         splitted = message.split(':',1)
         res = add_commands[splitted[0]] (splitted[1])
@@ -166,11 +167,11 @@ def handle_message(ws,message):
 
         my_log_file.close()
 
-        if selected_knowbase != None:
+        # if selected_knowbase != None:
 
-            gfile = open(selected_knowbase+"_graph.pkl", 'wb')
-            pkl.dump(know_base_dic[selected_knowbase]["graph"],gfile)
-            gfile.close()
+           # gfile = open(selected_knowbase+"_graph.pkl", 'wb')
+           # pkl.dump(know_base_dic[selected_knowbase]["graph"],gfile)
+           # gfile.close()
 
         print ("file closed")
         exit()
@@ -188,10 +189,10 @@ def main():
 
 
     print ("CONNECTED to " + wsh.END_POINT)
-    #i = 0 
+    #i = 0
 
     while (True):
-        handle_message(ws,ws.recv())
+        handle_message(ws, ws.recv())
         #i+=1
 
     ws.close()
