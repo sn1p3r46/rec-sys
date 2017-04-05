@@ -1,11 +1,11 @@
 #!/usr/bin/python3
 
+
 # https://pypi.python.org/pypi/websocket-client
 import websocket
 import json
 
 import wsHelper as wsh
-import pickle as pkl
 import igraph as ig
 
 
@@ -98,11 +98,8 @@ def handle_knowbase(msg):
     global selected_kb
 
     if selected_kb and not kb_dic[selected_kb]["persisted"]:
-
-        db_file = open (selected_kb + "_graph.pkl", "wb")
-        pkl.dump(kb_dic[selected_kb]["graph"], db_file)
-        db_file.close()
-        kb_dic[selected_kb]["persisted"] = True
+        if wsh.persist(kb_dic[selected_kb]["graph"],selected_kb + "_graph.pkl"):
+            kb_dic[selected_kb]["persisted"] = True
 
     selected_kb = msg.split(":")[1].strip()
 
@@ -114,29 +111,28 @@ def handle_knowbase(msg):
 
     else:
 
-        try:
+        graph = wsh.load(selected_kb + "_graph.pkl")
 
-            db_file = open(selected_kb + "_graph.pkl", "rb")
-            graph = pkl.load(file=db_file)
-            db_file.close()
-            kb_dic[selected_kb] = {
-                    "node_types" : set(graph.vs["type"]),
-                    "relation_types" : set(graph.es["type"]),
-                    "graph" : graph,
-                    "persisted" : True
-                }
-
-            return wsh.KB_SELECTED 
-
-        except FileNotFoundError:
+        if graph:
 
             kb_dic[selected_kb] = {
-                    "node_types" : set(),
-                    "relation_types" : set(),
-                    "graph" : ig.Graph(),
-                    "persisted" : False
-                }
+                        "node_types" : set(graph.vs["type"]),
+                        "relation_types" : set(graph.es["type"]),
+                        "graph" : graph,
+                        "persisted" : True
+                    }
+            
+            return wsh.KB_SELECTED
 
+        else:
+
+            kb_dic[selected_kb] = {
+                        "node_types" : set(),
+                        "relation_types" : set(),
+                        "graph" : ig.Graph(),
+                        "persisted" : False
+                    }           
+            
             return wsh.KB_CREATED
 
 
@@ -167,12 +163,6 @@ def handle_message(ws,msg):
 
         my_log_file.close()
 
-        # if selected_kb != None:
-
-           # gfile = open(selected_kb+"_graph.pkl", 'wb')
-           # pkl.dump(kb_dic[selected_kb]["graph"],gfile)
-           # gfile.close()
-
         print ("file closed")
         exit()
 
@@ -187,13 +177,10 @@ def main():
     ws = websocket.WebSocket()
     ws.connect(wsh.END_POINT)
 
-
     print ("CONNECTED to " + wsh.END_POINT)
-    #i = 0
 
     while (True):
         handle_message(ws, ws.recv())
-        #i+=1
 
     ws.close()
     print("WebSocket closed\nexit\n")

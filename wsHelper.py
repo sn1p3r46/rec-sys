@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+import pickle as pkl
 
 END_POINT               = "ws://service.recommender-system.com/recsys2-course/engine"
 
@@ -30,6 +31,26 @@ AUTH_DIC = {
     'Token'             : '4lvos7hd1a',
 
 }
+
+
+def persist(obj,fpath):
+    try:
+        with open(fpath,"wb") as fobj:
+            pkl.dump(obj,fobj)
+            return True
+    
+    except:
+        print("Error while persisting.")
+        return False
+
+
+def load(fpath):
+    try:
+        with open(fpath,"rb") as fobj:
+            return pkl.load(fobj)
+    except:
+        print("Errors while loading.")
+        return None 
 
 
 def send(ws,msg):
