@@ -48,14 +48,14 @@ def add_relation(relation_str):
 
     if relation["type"] in kb_dic[selected_kb]["relation_types"]:
 
-        v0 = g.vs.find(**{"id":relation.pop("fromId")})
-        v1 = g.vs.find(**{"id":relation.pop("toId")})
+        v0 = g.vs.find(**{"id" : relation.pop("fromId")}).index
+        v1 = g.vs.find(**{"id" : relation.pop("toId")}).index
         g.add_edge(v0,v1,**relation)
 
         return wsh.R_ADDED
-
+    print ("----------------------------------------\n" + relation["type"])
+    exit()
     return wsh.UNK_R_T
-
 
 def get_node_types():
     return wsh.N_TYPES + wsh.fmt_arr_str(kb_dic[selected_kb]["node_types"])
@@ -72,8 +72,11 @@ def get_relation_types():
 def get_relation_count():
     return wsh.R_COUNT + str(len(kb_dic[selected_kb]["graph"].es))
 
+def get_engines():
+    return "Engines:" +  json.dumps(wsh.engines)
 
-add_cmds = {
+
+par_cmds = {
 
     'Add node type' : add_node_type,
     'Add relation type' : add_relation_type,
@@ -88,10 +91,19 @@ get_cmds = {
     'Get node types' : get_node_types,
     'Get relation types' : get_relation_types,
     'Get node count' : get_node_count,
-    'Get relation count' : get_relation_count
+    'Get relation count' : get_relation_count,
+    'Get engines' : get_engines
 
 }
 
+"""
+recommender = { 
+
+    'Get rating estimation:' : rs.get_rating_estimation,
+    'Recommendations:' : rs.get_recommendations
+
+}
+"""
 
 def handle_knowbase(msg):
 
@@ -149,12 +161,16 @@ def handle_message(ws,msg):
     elif msg.startswith(wsh.SELECT_KB):
         res = handle_knowbase(msg)
 
-    elif msg.split(':',1)[0] in add_cmds:
+    elif msg.split(':',1)[0] in par_cmds:
         splitted = msg.split(':',1)
-        res = add_cmds[splitted[0]] (splitted[1])
+        res = par_cmds[splitted[0]] (splitted[1])
 
     elif msg in get_cmds:
         res = get_cmds[msg]()
+
+#    elif msg.split(':',1)[0] in recommender:
+#        splitted = msg.split(':',1)
+#        res = recommender[splitted[0]] (splitted[1], kb_dic[selected_kb])
 
     else:
 
@@ -162,7 +178,7 @@ def handle_message(ws,msg):
         print (kb_dic)
 
         my_log_file.close()
-
+        wsh.persist(kb_dic[selected_kb]["graph"], selected_kb + "_graph.pkl")
         print ("file closed")
         exit()
 

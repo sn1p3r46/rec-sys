@@ -33,6 +33,14 @@ AUTH_DIC = {
 }
 
 
+engines = [
+    
+    { "name" : "Item_average", "providesRatingEstimations" : True },
+    { "name" : "User_average", "providesRatingEstimations" : True }
+    
+    ]
+
+
 def persist(obj,fpath):
     try:
         with open(fpath,"wb") as fobj:
